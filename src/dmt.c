@@ -33,7 +33,26 @@ typedef struct dmt_node_t {
 
 dmt_node_t *dmt_head;
 
+typedef struct dmt_cxt_node {
+	dmt_node_t *next;
+	dmt_node_t *prev;
+} dmt_cxt_node;
 
+typedef struct dmt_context_list {
+	dmt_cxt_node *head;
+	dmt_cxt_node *tail;
+} dmt_context_list;
+
+dmt_context_list *dmt_cxt;
+
+unsigned short dmt_push_context(const char *name) {
+
+	return 0;
+}
+
+void dmt_pop_context(const unsigned char dump_context) {
+
+}
 
 int _dmt_has_node(dmt_node_t *n) {
   dmt_node_t *node = dmt_head;
@@ -58,41 +77,41 @@ void _dmt_abort(void) {
 
 
 void *_dmt_alloc(size_t sz, int zeroset, const char *file, unsigned line) {
-  dmt_node_t *node = NULL;
-  
-  if (zeroset) {
-    node = calloc(sizeof(*node) + sz, 1);
-  } else {
-    node = malloc(sizeof(*node) + sz);
-    if (node != NULL) {
-      memset(node, 0, sizeof(*node));
-    }
-  }
+	dmt_node_t *node = NULL;
 
-  if (node == NULL) {
+	if (zeroset) {
+		node = calloc(sizeof(*node) + sz, 1);
+	} else {
+		node = malloc(sizeof(*node) + sz);
+		if (node != NULL) {
+			memset(node, 0, sizeof(*node));
+		}
+	}
+
+	if (node == NULL) {
 #ifdef DMT_ABORT_NULL
-    fprintf(stderr, "Couldn't allocate: %s, line %u\n", file, line);
-    _dmt_abort();
+		fprintf(stderr, "Couldn't allocate: %s, line %u\n", file, line);
+		_dmt_abort();
 #else
-    return NULL;
+		return NULL;
 #endif
-  }
+	}
 
-  node->line = line;
-  node->file = file;
-  node->size = sz;
+	node->line = line;
+	node->file = file;
+	node->size = sz;
 
 #ifdef DMT_STACK_TRACE
-  node->stacktrace_sz = backtrace(node->stacktrace, DMT_STACK_TRACE_MAX);
+	node->stacktrace_sz = backtrace(node->stacktrace, DMT_STACK_TRACE_MAX);
 #endif
 
-  if (dmt_head) {
-    dmt_head->prev = node;
-    node->next = dmt_head;
-  }
-  dmt_head = node;
+	if (dmt_head) {
+		dmt_head->prev = node;
+		node->next = dmt_head;
+	}
+	dmt_head = node;
 
-  return (char*)node + sizeof(*node);
+	return (char*)node + sizeof(*node);
 }
 
 
@@ -159,7 +178,7 @@ void dmt_dump(FILE *fp) {
   if (!fp) fp = stdout;
 
   while (node != NULL) {
-    fprintf(fp, "Unfreed: %p %s, line %lu (%lu bytes)\n", 
+    fprintf(fp, "Unfreed: %p %s, line %lu (%lu bytes)\n",
             (char*)node + sizeof(*node), node->file,
             (unsigned long)node->line, (unsigned long)node->size);
 
@@ -199,7 +218,7 @@ size_t dmt_usage(void) {
   while (node != NULL) {
     total += node->size;
     node = node->next;
-  } 
+  }
 
   return total;
 }

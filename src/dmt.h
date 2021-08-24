@@ -21,6 +21,9 @@ void   *_dmt_realloc(void*, size_t, const char*, unsigned);
 void    _dmt_free(void*, const char*, unsigned);
 size_t  _dmt_size(void*, const char*, unsigned);
 
+unsigned short dmt_push_context(const char *name);
+void dmt_pop_context(const unsigned char dump_context);
+
 void    dmt_dump(FILE*);
 size_t  dmt_usage(void);
 int     dmt_has(void *ptr);
