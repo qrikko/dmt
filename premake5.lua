@@ -6,7 +6,7 @@ project "dmt"
 	tool()
 
 	targetdir (engine_root .. "/lib/" .. outputdir)
-	objdir (engine_root .. "/bin-int/" .. outputdir .. "/%{prj.name}")
+	objdir (engine_root .. "/bin-int/" .. outputdir .. "dmt")
 
 	files {
 		"src/**.h",
