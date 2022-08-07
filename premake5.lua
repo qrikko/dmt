@@ -1,12 +1,13 @@
 project "dmt"
 	kind "staticLib"
-	language "C"
-	cdialect "C11"
-	staticruntime "on"
-	tool()
+	language (engine.compiler.language)
+	cdialect (engine.compiler.dialect)
+	toolset (engine.compiler.toolset)
 
-	targetdir (engine_root .. "/lib/" .. outputdir)
-	objdir (engine_root .. "/bin-int/" .. outputdir .. "dmt")
+	targetdir (engine.lib)
+	objdir (engine.intermediate)
+
+	staticruntime "on"
 
 	files {
 		"src/**.h",
