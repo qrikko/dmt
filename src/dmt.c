@@ -18,6 +18,15 @@
 #endif
 #endif
 
+#ifdef DMT_LOGC
+    #include <log.h>
+    #define DMT_LOG_INFO(...) log_dmt_info(__VA_ARGS__)
+    #define DMT_LOG_LEAK(...) log_dmt_leak(__VA_ARGS__)
+#else
+    #include <stdio.h>
+    #define DMT_LOG_INFO(...) fprintf(stderr, __VA_ARGS__)
+    #define DMT_LOG_LEAK(...) fprintf(stderr, __VA_ARGS__)
+#endif
 
 typedef struct dmt_node_t {
   struct dmt_node_t *prev, *next;
@@ -90,7 +99,7 @@ void *_dmt_alloc(size_t sz, int zeroset, const char *file, unsigned line) {
 
 	if (node == NULL) {
 #ifdef DMT_ABORT_NULL
-		fprintf(stderr, "Couldn't allocate: %s, line %u\n", file, line);
+        DMT_LOG_LEAK("Couldn't allocate: %s, line %u\n", file, line);
 		_dmt_abort();
 #else
 		return NULL;
@@ -124,7 +133,7 @@ void *_dmt_realloc(void *ptr, size_t sz, const char *file, unsigned line) {
 
 #ifndef DMT_UNSAFE
   if (!_dmt_has_node(node)) {
-    fprintf(stderr, "Bad realloc: %p %s, line %u\n", ptr, file, line);
+    DMT_LOG_LEAK("Bad realloc: %p %s, line %u\n", ptr, file, line);
     _dmt_abort();
   }
 #endif
@@ -133,7 +142,7 @@ void *_dmt_realloc(void *ptr, size_t sz, const char *file, unsigned line) {
 
   if (node == NULL) {
 #ifdef DMT_ABORT_NULL
-    fprintf(stderr, "Couldn't reallocate: %s, line %u\n", file, line);
+    DMT_LOG_LEAK("Couldn't reallocate: %s, line %u\n", file, line);
     _dmt_abort();
 #else
     return NULL;
@@ -157,7 +166,7 @@ void _dmt_free(void *ptr, const char *file, unsigned line) {
 
 #ifndef DMT_UNSAFE
   if (!_dmt_has_node(node)) {
-    fprintf(stderr, "Bad free: %p %s, line %u\n", ptr, file, line);
+    DMT_LOG_LEAK("Bad free: %p %s, line %u\n", ptr, file, line);
     _dmt_abort();
   }
 #endif
@@ -172,26 +181,38 @@ void _dmt_free(void *ptr, const char *file, unsigned line) {
 
 
 void dmt_dump(FILE *fp) {
-  dmt_node_t *node = dmt_head;
-  size_t total = 0;
+    dmt_node_t *node = dmt_head;
+    size_t total = 0;
 
-  if (!fp) fp = stdout;
+    if (!fp) fp = stdout;
 
-  while (node != NULL) {
-    fprintf(fp, "Unfreed: %p %s, line %lu (%lu bytes)\n",
+    printf("\n==== DMT RESULTS: ===============\n");
+    while (node != NULL) {
+        if (fp == stdout) {
+            DMT_LOG_LEAK("Unfreed: %p %s, line %lu (%lu bytes)\n",
+                (char*)node + sizeof(*node), node->file,
+                (unsigned long)node->line, (unsigned long)node->size
+            );
+        } else {
+            fprintf(fp, "Unfreed: %p %s, line %lu (%lu bytes)\n",
             (char*)node + sizeof(*node), node->file,
             (unsigned long)node->line, (unsigned long)node->size);
+        }
 
 #ifdef DMT_STACK_TRACE
-    backtrace_symbols_fd(node->stacktrace, node->stacktrace_sz, fileno(fp));
-    fprintf(fp, "\n");
+        backtrace_symbols_fd(node->stacktrace, node->stacktrace_sz, fileno(fp));
+        fprintf(fp, "\n");
 #endif
 
-    total += node->size;
-    node = node->next;
-  }
+        total += node->size;
+        node = node->next;
+    }
 
-  fprintf(fp, "Total unfreed: %lu bytes\n", (unsigned long)total);
+    if (fp == stdout) {
+        DMT_LOG_LEAK("Total unfreed: %lu bytes\n", (unsigned long)total);
+    } else {
+        fprintf(fp, "Total unfreed: %lu bytes\n", (unsigned long)total);
+    }
 }
 
 
@@ -201,7 +222,7 @@ size_t _dmt_size(void *ptr, const char* file, unsigned line) {
 
 #ifndef DMT_UNSAFE
   if (!_dmt_has_node(node)) {
-    fprintf(stderr, "Bad pointer: %p %s, line %u\n", ptr, file, line);
+    DMT_LOG_LEAK("Bad pointer: %p %s, line %u\n", ptr, file, line);
     _dmt_abort();
   }
 #endif
